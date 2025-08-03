@@ -21,7 +21,7 @@ def import_drivers
 end
 
 def race
-  @race ||= Race.new(drivers: import_drivers, track_name: 'Iowa Speedway')
+  @race ||= Race.new(drivers: import_drivers, race_name: 'Iowa Corn 350')
 end
 
 def run!
