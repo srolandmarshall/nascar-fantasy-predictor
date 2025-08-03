@@ -21,11 +21,10 @@ def import_drivers
 end
 
 def race
-  @race ||= Race.new(drivers: @drivers, track_name: 'Iowa Speedway')
+  @race ||= Race.new(drivers: import_drivers, track_name: 'Iowa Speedway')
 end
 
 def run!
-  import_drivers
   race.generate_prediction.tap do |prediction|
     puts prediction
   end

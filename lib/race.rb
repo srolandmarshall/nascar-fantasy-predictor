@@ -42,36 +42,70 @@ class Race
     'Indianapolis Motor Speedway' => 0.8,
     'Circuit of the Americas' => 0.4,
     'Watkins Glen International' => 0.5,
-    'Iowa Speedway' => 1.6
+    'Iowa Speedway' => 1.6,
+    'Auto Club Speedway' => 1.0,
+    'Sonoma Raceway' => 0.6,
+    'Michigan International Speedway' => 1.0,
+    'Charlotte Motor Speedway ROVAL' => 0.7
   }
 
+  NASCAR_RACES = {
+    'Daytona 500' => 'Daytona International Speedway',
+    'Coke Zero Sugar 400' => 'Daytona International Speedway',
+    'Folds of Honor QuikTrip 500' => 'Atlanta Motor Speedway',
+    'Pennzoil 400' => 'Las Vegas Motor Speedway',
+    'United Rentals Work United 500' => 'Phoenix Raceway',
+    'Auto Club 400' => 'Auto Club Speedway',
+    'Würth 400' => 'Richmond Raceway',
+    'Food City Dirt Race' => 'Bristol Motor Speedway',
+    'Coca-Cola 600' => 'Charlotte Motor Speedway',
+    'Ally 400' => 'Nashville Superspeedway',
+    'Buschy McBusch Race 400' => 'Kansas Speedway',
+    'Cook Out Southern 500' => 'Darlington Raceway',
+    'Go Bowling at The Glen' => 'Watkins Glen International',
+    'Consumers Energy 400' => 'Michigan International Speedway',
+    'Talladega 500' => 'Talladega Superspeedway',
+    'Toyota/Save Mart 350' => 'Sonoma Raceway',
+    'Pocono Organics CBD 325' => 'Pocono Raceway',
+    'Brickyard 400 Presented by PPG' => 'Indianapolis Motor Speedway',
+    'Bank of America Roval 400' => 'Charlotte Motor Speedway ROVAL',
+    'Hollywood Casino 400' => 'Kansas Speedway',
+    'Autotrader EchoPark Automotive 400' => 'Dover International Speedway',
+    'Xfinity 500' => 'Martinsville Speedway',
+    'GEICO 500' => 'Talladega Superspeedway',
+    'NASCAR Cup Series Championship Race' => 'Phoenix Raceway',
+    'Iowa Corn 350' => 'Iowa Speedway'
+  }
   # name: string of race venue; used to lookup default differential_weight
   # differential_weight: optional override
-  def initialize(track_name:, drivers:, salary_cap: 50_000, differential_weight: nil, field_size: 40)
-    @track_name = track_name
+  def initialize(track_name:, race_name:, drivers:, differential_weight: nil, field_size: 40)
     @drivers = drivers
-    @salary_cap = salary_cap
     @field_size = field_size
-    @differential_weight = differential_weight || DIFFERENTIAL_WEIGHTS[name] || 1.0
+    @track_name = track_name || NASCAR_RACES[race_name]
+    @differential_weight = differential_weight || DIFFERENTIAL_WEIGHTS[track_name] || 1.0
+    @salary_cap = 50_000
   end
 
   # Generates the optimal 6-driver prediction under the salary cap
   # by brute-force combination search, maximizing combined score
   def generate_prediction
-    best_lineup = nil
-    best_score = 0.0
+    valid_lineups = generate_valid_lineups
+    best_lineup = select_best_lineup(valid_lineups)
+    best_score = calculate_lineup_score(best_lineup)
+    Prediction.new(best_lineup, best_score)
+  end
 
-    drivers.combination(6).each do |combo|
-      total_salary = combo.sum(&:salary)
-      next if total_salary > salary_cap
+  private
 
-      total_score = combo.sum { |drv| drv.score(differential_weight: differential_weight, field_size: field_size) }
-      if total_score > best_score
-        best_score = total_score
-        best_lineup = combo
-      end
-    end
+  def generate_valid_lineups
+    drivers.combination(6).reject { |combo| combo.sum(&:salary) > salary_cap }
+  end
 
-    Prediction.new(best_lineup || [], best_score)
+  def select_best_lineup(lineups)
+    lineups.max_by { |combo| calculate_lineup_score(combo) } || []
+  end
+
+  def calculate_lineup_score(lineup)
+    lineup.sum { |drv| drv.score(differential_weight: differential_weight, field_size: field_size) }
   end
 end
