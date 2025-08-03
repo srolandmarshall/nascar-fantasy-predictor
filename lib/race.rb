@@ -78,7 +78,7 @@ class Race
   }
   # name: string of race venue; used to lookup default differential_weight
   # differential_weight: optional override
-  def initialize(track_name:, race_name:, drivers:, differential_weight: nil, field_size: 40)
+  def initialize(drivers:, track_name: nil, race_name: nil, differential_weight: nil, field_size: 40)
     @drivers = drivers
     @field_size = field_size
     @track_name = track_name || NASCAR_RACES[race_name]
